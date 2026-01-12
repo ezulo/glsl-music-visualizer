@@ -30,6 +30,9 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
 $(TARGET): $(OBJS) | $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+run: $(TARGET)
+	./$(TARGET)
+
 clean:
 	rm -f $(TARGET)
 	rm -rf $(BUILD_DIR)
