@@ -1,6 +1,6 @@
 CC = clang
 CFLAGS = -Wall -Wextra -O2
-LDFLAGS = -lGL -lGLEW -lglfw -lm
+LDFLAGS = -lGL -lGLEW -lglfw -lm -lfftw3 -lpulse -lpulse-simple -lpthread
 
 VER_MAJOR = 0
 VER_MINOR = 1
