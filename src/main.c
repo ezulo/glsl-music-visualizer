@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "audio.h"
 #include "config.h"
 
 #define SHADER_VERTEX CONFIG_SHADER_PATH CONFIG_SHADER_VERTEX
@@ -163,6 +164,25 @@ int main(void) {
 
   GLint time_loc = glGetUniformLocation(shader_program, "u_time");
   GLint resolution_loc = glGetUniformLocation(shader_program, "u_resolution");
+  GLint fft_loc = glGetUniformLocation(shader_program, "u_fft");
+
+  /* Initialize audio capture */
+
+  if (audio_init() != 0) {
+    fprintf(stderr, "Warning: Audio initialization failed, continuing without "
+                    "audio\n");
+  }
+
+  /* Create 1D texture for FFT data */
+
+  GLuint fft_texture;
+  glGenTextures(1, &fft_texture);
+  glBindTexture(GL_TEXTURE_1D, fft_texture);
+  glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, audio_get_fft_size(), 0, GL_RED,
+               GL_FLOAT, NULL);
 
   while (!glfwWindowShouldClose(window)) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -175,9 +195,19 @@ int main(void) {
 
     glClear(GL_COLOR_BUFFER_BIT);
 
+    /* Update audio and FFT */
+    audio_update();
+
+    /* Upload FFT data to texture */
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_1D, fft_texture);
+    glTexSubImage1D(GL_TEXTURE_1D, 0, 0, audio_get_fft_size(), GL_RED, GL_FLOAT,
+                    audio_get_fft_data());
+
     glUseProgram(shader_program);
     glUniform1f(time_loc, (float)glfwGetTime());
     glUniform2f(resolution_loc, (float)width, (float)height);
+    glUniform1i(fft_loc, 0);
 
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -186,6 +216,9 @@ int main(void) {
     glfwPollEvents();
   }
 
+  audio_cleanup();
+
+  glDeleteTextures(1, &fft_texture);
   glDeleteVertexArrays(1, &VAO);
   glDeleteBuffers(1, &VBO);
   glDeleteBuffers(1, &EBO);
