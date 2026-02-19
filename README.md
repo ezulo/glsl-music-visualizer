@@ -9,7 +9,7 @@ Currently building out in Linux, but the intention is cross-platform use.
 ```bash
 
 # For window management
-pacman -S glfw mesa glew
+pacman -S glfw mesa glad
 
 # For audio streaming
 pacman -S libpulse

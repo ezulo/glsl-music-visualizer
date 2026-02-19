@@ -16,13 +16,12 @@
 #define AUDIO_SAMPLE_RATE 44100
 #define AUDIO_BUFFER_SIZE 2048
 #define AUDIO_FFT_SIZE 2048
-#define AUDIO_SMOOTHING 0.8f
+#define AUDIO_SMOOTHING 0.9f
 
-/* PulseAudio source - set to your monitor source or NULL for default.
+/* PulseAudio source - set to your source or NULL for default mic.
  * Run 'pactl list sources short' to find available sources.
- * Example: "alsa_output.pci-0000_00_1f.3.analog-stereo.monitor" */
-#define AUDIO_PULSE_SOURCE                                                     \
-  "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-"       \
-  "stereo.monitor"
+ * For microphone: use NULL (default input) or a specific mic source
+ * For system audio: use a .monitor source like "alsa_output.xxx.monitor" */
+#define AUDIO_PULSE_SOURCE NULL
 
 #endif

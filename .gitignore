@@ -4,3 +4,6 @@ target/
 # executable
 visualizer-*
 
+# glad
+src/glad/
+

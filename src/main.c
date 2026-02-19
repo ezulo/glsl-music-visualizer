@@ -1,4 +1,4 @@
-#include <GL/glew.h>
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -123,8 +123,8 @@ int main(void) {
 
   /* Load OpenGL function pointers for our context */
 
-  if (glewInit() != GLEW_OK) {
-    fprintf(stderr, "Failed to initialize GLEW\n");
+  if (!gladLoadGL(glfwGetProcAddress)) {
+    fprintf(stderr, "Failed to initialize GLAD\n");
     return -1;
   }
 
