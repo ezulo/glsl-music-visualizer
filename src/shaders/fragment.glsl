@@ -34,15 +34,16 @@ float get_treble() { return get_freq(0.5); }
 vec3 palette(in float t) {
   vec3 a = vec3(0.5f, 0.5f, 0.5f); // brightness
   vec3 b = vec3(0.5f, 0.5f, 0.5f); // contrast
-  vec3 c = vec3(1.0f, 1.0f, 1.0f); // how quickly colors change
-  vec3 d = vec3(0.5f, 0.6f, 0.7f); // location of color picks
+  vec3 c = vec3(1.0f, 1.0f, 0.5f); // how quickly colors change
+  vec3 d = vec3(0.8f, 0.9f, 0.3f); // location of color picks
   return a + b * cos( PI * 2.0f * (c * t + d) );
 }
 
 void main() {
   vec2 uv;
+  vec2 fbo_offset;
   vec3 color, bg_color, final_color;
-  float dist;
+  float dist, bar_x, bar_y;
 
   // Sample audio frequencies
   float bass = get_bass();
@@ -51,14 +52,18 @@ void main() {
 
   // Sample previous frame
   // Normalize coordinates to [-1, 1] with aspect ratio correction
-  uv = (gl_FragCoord.xy * 2.0 - u_resolution) / min(u_resolution.x, u_resolution.y);
+  //uv = (gl_FragCoord.xy * 2.0 - u_resolution) / min(u_resolution.x, u_resolution.y);
+  uv = gl_FragCoord.xy / u_resolution * 2.0 - 1.0;
   dist = length(uv);
 
-  vec3 prev = texture(u_prev_frame, gl_FragCoord.xy / u_resolution).rgb;
+  // Tracer offset
+  fbo_offset = vec2(3.0f, -1.0f) / u_resolution;
+
+  vec3 prev = texture(u_prev_frame, fbo_offset + gl_FragCoord.xy / u_resolution).rgb;
   prev *= float(u_tracer_mult); // darken
 
   // Normalize x to exactly [-1, 1] for bar calculation (no aspect ratio correction)
-  float bar_x = (gl_FragCoord.x / u_resolution.x) * 2.0 - 1.0;
+  bar_x = uv.x;
 
   // Number of bars on the screen
   int num_bars = 40;
@@ -82,15 +87,17 @@ void main() {
   float freq_amplitude = get_freq(mix(FREQ_MIN, FREQ_MAX, freq));
   freq_amplitude = pow(freq_amplitude, 2);
 
-  // Normalize y to [0, 1] for bar height comparison (0 = bottom, 1 = top)
-  float bar_y = gl_FragCoord.y / u_resolution.y;
+  // Compute y value
+  /* bottom */
+  // float bar_y = (uv.y + 1.0) * 0.5f;
+  /* centered (along x axis) */
+  bar_y = abs(uv.y);
 
   // Bar height is determined by the frequency amplitude
   float bar_height = freq_amplitude;
 
-  // Set bar color (brighter at top)
-  //color = vec3(1.0f, bar_y, 0.0f);
-  color = palette(bar_y);
+  // Set bar color 
+  color = palette(uv.y);
 
   // Background color
   bg_color = vec3(0.1f, 0.1f, 0.15f);
