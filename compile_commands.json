@@ -1,0 +1,17 @@
+[
+  {
+    "directory": "/home/eduardo/Projects/glsl/glsl-music-visualizer",
+    "command": "clang -Wall -Wextra -O2 -Isrc/glad/include -c src/main.c -o target/main.o",
+    "file": "src/main.c"
+  },
+  {
+    "directory": "/home/eduardo/Projects/glsl/glsl-music-visualizer",
+    "command": "clang -Wall -Wextra -O2 -Isrc/glad/include -c src/audio.c -o target/audio.o",
+    "file": "src/audio.c"
+  },
+  {
+    "directory": "/home/eduardo/Projects/glsl/glsl-music-visualizer",
+    "command": "clang -Wall -Wextra -O2 -Isrc/glad/include -c src/glad/src/gl.c -o target/glad.o",
+    "file": "src/glad/src/gl.c"
+  }
+]

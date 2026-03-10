@@ -1,5 +1,6 @@
-#include <glad/gl.h>
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#include <glad/gl.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -165,6 +166,8 @@ int main(void) {
   GLint time_loc = glGetUniformLocation(shader_program, "u_time");
   GLint resolution_loc = glGetUniformLocation(shader_program, "u_resolution");
   GLint fft_loc = glGetUniformLocation(shader_program, "u_fft");
+  GLint tracer_mult_loc = glGetUniformLocation(shader_program, "u_tracer_mult");
+  GLint prev_frame_loc = glGetUniformLocation(shader_program, "u_prev_frame");
 
   /* Initialize audio capture */
 
@@ -174,7 +177,6 @@ int main(void) {
   }
 
   /* Create 1D texture for FFT data */
-
   GLuint fft_texture;
   glGenTextures(1, &fft_texture);
   glBindTexture(GL_TEXTURE_1D, fft_texture);
@@ -184,15 +186,63 @@ int main(void) {
   glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, audio_get_fft_size(), 0, GL_RED,
                GL_FLOAT, NULL);
 
+  /* 2 Frame Buffer Objects for tracer effect */
+  GLuint fbo[2], fbo_texture[2];
+  int current_fbo = 0;
+
+  glGenFramebuffers(2, fbo);
+  glGenTextures(2, fbo_texture);
+
+  for (int i = 0; i < 2; i++) {
+    glBindTexture(GL_TEXTURE_2D, fbo_texture[i]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, GLFW_WINDOW_WIDTH,
+                 GLFW_WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
+                    GL_CLAMP_TO_EDGE); // x dimension of texture
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,
+                    GL_CLAMP_TO_EDGE); // y dimension of texture
+
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo[i]);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                           fbo_texture[i], 0);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+      fprintf(stderr, "Framebuffer %d not complete\n", i);
+      return -1;
+    }
+  }
+
+  /* Unbind FBO, return to default framebuffer (screen) */
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  /* Tracer multiplier */
+  float tracer_mult = 0.97f;
+
   while (!glfwWindowShouldClose(window)) {
+    /* Keybinds */
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
       glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+      tracer_mult += 0.001f;
+      if (tracer_mult > 1.0f) {
+        tracer_mult = 1.0f;
+      }
+    }
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+      tracer_mult -= 0.001f;
+      if (tracer_mult < 0.0f) {
+        tracer_mult = 0.0f;
+      }
     }
 
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo[current_fbo]);
     glClear(GL_COLOR_BUFFER_BIT);
 
     /* Update audio and FFT */
@@ -204,13 +254,26 @@ int main(void) {
     glTexSubImage1D(GL_TEXTURE_1D, 0, 0, audio_get_fft_size(), GL_RED, GL_FLOAT,
                     audio_get_fft_data());
 
+    /* Upload framebuffer texture */
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, fbo_texture[1 - current_fbo]);
+
     glUseProgram(shader_program);
     glUniform1f(time_loc, (float)glfwGetTime());
     glUniform2f(resolution_loc, (float)width, (float)height);
-    glUniform1i(fft_loc, 0);
+    glUniform1f(tracer_mult_loc, (float)tracer_mult);
+    glUniform1i(fft_loc, 0);        // on GL_TEXTURE0 slot
+    glUniform1i(prev_frame_loc, 1); // on GL_TEXTURE1 slot
 
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+    /* Unbind FBO, blit to screen */
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height,
+                      GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    current_fbo = 1 - current_fbo;
 
     glfwSwapBuffers(window);
     glfwPollEvents();
