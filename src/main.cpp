@@ -21,7 +21,7 @@ static char *read_file(const char *path) {
   long length = ftell(file);
   fseek(file, 0, SEEK_SET);
 
-  char *buffer = malloc(length + 1);
+  char *buffer = (char *)malloc(length + 1);
   if (!buffer) {
     fclose(file);
     return NULL;

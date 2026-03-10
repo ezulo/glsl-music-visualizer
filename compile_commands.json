@@ -1,13 +1,13 @@
 [
   {
     "directory": "/home/eduardo/Projects/glsl/glsl-music-visualizer",
-    "command": "clang -Wall -Wextra -O2 -Isrc/glad/include -c src/main.c -o target/main.o",
-    "file": "src/main.c"
+    "command": "clang++ -Wall -Wextra -O2 -Isrc/glad/include -Isrc/imgui -Isrc/imgui/backends -c src/main.cpp -o target/main.o",
+    "file": "src/main.cpp"
   },
   {
     "directory": "/home/eduardo/Projects/glsl/glsl-music-visualizer",
-    "command": "clang -Wall -Wextra -O2 -Isrc/glad/include -c src/audio.c -o target/audio.o",
-    "file": "src/audio.c"
+    "command": "clang++ -Wall -Wextra -O2 -Isrc/glad/include -c src/audio.cpp -o target/audio.o",
+    "file": "src/audio.cpp"
   },
   {
     "directory": "/home/eduardo/Projects/glsl/glsl-music-visualizer",

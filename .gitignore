@@ -4,6 +4,7 @@ target/
 # executable
 visualizer-*
 
-# glad
+# third-party
 src/glad/
+src/imgui/
 

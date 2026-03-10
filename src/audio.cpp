@@ -74,14 +74,14 @@ int audio_init(void) {
   /* Connect to PulseAudio - use default monitor source
    * You can specify a specific source like "alsa_output.pci-xxx.monitor"
    * or pass NULL to use the default source */
-  pa_handle = pa_simple_new(NULL,              /* Server (NULL = default) */
-                            "GLSL Visualizer", /* Application name */
-                            PA_STREAM_RECORD,  /* Stream direction */
+  pa_handle = pa_simple_new(NULL,               /* Server (NULL = default) */
+                            "GLSL Visualizer",  /* Application name */
+                            PA_STREAM_RECORD,   /* Stream direction */
                             AUDIO_PULSE_SOURCE, /* Source (NULL = default) */
-                            "Audio FFT",       /* Stream description */
-                            &ss,               /* Sample spec */
-                            NULL,              /* Channel map (NULL = default) */
-                            &buffer_attr,      /* Buffering attributes */
+                            "Audio FFT",        /* Stream description */
+                            &ss,                /* Sample spec */
+                            NULL,         /* Channel map (NULL = default) */
+                            &buffer_attr, /* Buffering attributes */
                             &error);
 
   if (!pa_handle) {
@@ -94,10 +94,11 @@ int audio_init(void) {
   }
 
   /* Allocate buffers */
-  sample_buffer = calloc(AUDIO_BUFFER_SIZE, sizeof(float));
-  fft_input = fftw_malloc(sizeof(double) * AUDIO_FFT_SIZE);
-  fft_output = fftw_malloc(sizeof(fftw_complex) * (AUDIO_FFT_SIZE / 2 + 1));
-  fft_magnitudes = calloc(AUDIO_FFT_SIZE / 2, sizeof(float));
+  sample_buffer = (float *)calloc(AUDIO_BUFFER_SIZE, sizeof(float));
+  fft_input = (double *)fftw_malloc(sizeof(double) * AUDIO_FFT_SIZE);
+  fft_output = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) *
+                                           (AUDIO_FFT_SIZE / 2 + 1));
+  fft_magnitudes = (float *)calloc(AUDIO_FFT_SIZE / 2, sizeof(float));
 
   if (!sample_buffer || !fft_input || !fft_output || !fft_magnitudes) {
     fprintf(stderr, "Failed to allocate audio buffers\n");
@@ -106,8 +107,8 @@ int audio_init(void) {
   }
 
   /* Create FFT plan */
-  fft_plan = fftw_plan_dft_r2c_1d(AUDIO_FFT_SIZE, fft_input, fft_output,
-                                  FFTW_MEASURE);
+  fft_plan =
+      fftw_plan_dft_r2c_1d(AUDIO_FFT_SIZE, fft_input, fft_output, FFTW_MEASURE);
 
   if (!fft_plan) {
     fprintf(stderr, "Failed to create FFT plan\n");
@@ -124,8 +125,8 @@ int audio_init(void) {
     return -1;
   }
 
-  printf("Audio initialized: %d Hz, %d samples, %d FFT bins\n", AUDIO_SAMPLE_RATE,
-         AUDIO_BUFFER_SIZE, AUDIO_FFT_SIZE / 2);
+  printf("Audio initialized: %d Hz, %d samples, %d FFT bins\n",
+         AUDIO_SAMPLE_RATE, AUDIO_BUFFER_SIZE, AUDIO_FFT_SIZE / 2);
 
   return 0;
 }
@@ -197,8 +198,8 @@ void audio_update(void) {
       normalized = 1.0;
 
     /* Simple smoothing */
-    fft_magnitudes[i] =
-        fft_magnitudes[i] * AUDIO_SMOOTHING + normalized * (1.0 - AUDIO_SMOOTHING);
+    fft_magnitudes[i] = fft_magnitudes[i] * AUDIO_SMOOTHING +
+                        normalized * (1.0 - AUDIO_SMOOTHING);
   }
 }
 
