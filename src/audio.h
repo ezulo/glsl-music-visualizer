@@ -3,7 +3,10 @@
 
 #include <stddef.h>
 
+#ifdef __cplusplus
 extern "C" {
+#endif
+
 /*
  * Initialize audio capture and FFT processing.
  * Returns 0 on success, -1 on failure.
@@ -32,5 +35,8 @@ const float *audio_get_fft_data(void);
  */
 size_t audio_get_fft_size(void);
 
-#endif
+#ifdef __cplusplus
 }
+#endif
+
+#endif
