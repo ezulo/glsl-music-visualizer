@@ -99,6 +99,22 @@ static GLuint create_shader_program(const char *vert_path,
   return program;
 }
 
+/*
+ * Resize FBO textures if window dimensions changed
+ */
+static void resize_fbo_textures(GLuint *fbo_texture, int width, int height,
+                                int *last_width, int *last_height) {
+  if (width != *last_width || height != *last_height) {
+    for (int i = 0; i < 2; i++) {
+      glBindTexture(GL_TEXTURE_2D, fbo_texture[i]);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
+                   GL_UNSIGNED_BYTE, NULL);
+    }
+    *last_width = width;
+    *last_height = height;
+  }
+}
+
 int main(void) {
   if (!glfwInit()) {
     fprintf(stderr, "Failed to initialize GLFW\n");
@@ -220,6 +236,9 @@ int main(void) {
   /* Tracer multiplier */
   float tracer_mult = 0.97f;
 
+  /* Track framebuffer size for FBO resize */
+  int last_width = GLFW_WINDOW_WIDTH, last_height = GLFW_WINDOW_HEIGHT;
+
   while (!glfwWindowShouldClose(window)) {
     /* Keybinds */
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -240,6 +259,7 @@ int main(void) {
 
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
+    resize_fbo_textures(fbo_texture, width, height, &last_width, &last_height);
     glViewport(0, 0, width, height);
 
     glBindFramebuffer(GL_FRAMEBUFFER, fbo[current_fbo]);
@@ -258,6 +278,7 @@ int main(void) {
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, fbo_texture[1 - current_fbo]);
 
+    /* Assign Uniforms */
     glUseProgram(shader_program);
     glUniform1f(time_loc, (float)glfwGetTime());
     glUniform2f(resolution_loc, (float)width, (float)height);
