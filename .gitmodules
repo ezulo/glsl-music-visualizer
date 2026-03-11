@@ -1,0 +1,3 @@
+[submodule "/home/eduardo/Projects/glsl/glsl-music-visualizer/third_party/imgui"]
+	path = /home/eduardo/Projects/glsl/glsl-music-visualizer/third_party/imgui
+	url = https://github.com/ocornut/imgui.git

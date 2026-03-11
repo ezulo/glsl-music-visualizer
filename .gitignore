@@ -5,6 +5,8 @@ target/
 visualizer-*
 
 # third-party
-src/glad/
-src/imgui/
+third_party/
+
+# clangd
+.cache/
 

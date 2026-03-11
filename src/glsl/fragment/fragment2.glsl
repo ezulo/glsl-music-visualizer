@@ -32,10 +32,10 @@ float get_treble() { return get_freq(0.5); }
  * cosine-based palette function https://iquilezles.org/articles/palettes/
  */
 vec3 palette(in float t) {
-  vec3 a = vec3(0.5f, 0.5f, 0.5f); // brightness
-  vec3 b = vec3(0.5f, 0.5f, 0.5f); // contrast
-  vec3 c = vec3(1.0f, 1.0f, 0.5f); // how quickly colors change
-  vec3 d = vec3(0.8f, 0.9f, 0.3f); // location of color picks
+  vec3 a = vec3(0.41f, 0.40f, 0.72f);  // center: midpoint between sky blue and indigo
+  vec3 b = vec3(0.12f, 0.40f, 0.20f);  // amplitude: oscillation range
+  vec3 c = vec3(0.5f, 0.5f, 0.5f);     // frequency of color change
+  vec3 d = vec3(0.0f, 0.0f, 0.0f);     // phase offset
   return a + b * cos( PI * 2.0f * (c * t + d) );
 }
 
@@ -57,7 +57,7 @@ void main() {
   dist = length(uv);
 
   // Tracer offset
-  fbo_offset = vec2(3.0f, -1.0f) / u_resolution;
+  fbo_offset = vec2(0.0f, 0.0f) / u_resolution;
 
   vec3 prev = texture(u_prev_frame, fbo_offset + gl_FragCoord.xy / u_resolution).rgb;
   prev *= float(u_tracer_mult); // darken

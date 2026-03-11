@@ -1,7 +1,7 @@
 CXX = clang++
 CC = clang
-CXXFLAGS = -Wall -Wextra -O2 -I$(SRC_DIR)/glad/include -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends
-CFLAGS = -Wall -Wextra -O2 -I$(SRC_DIR)/glad/include
+CXXFLAGS = -Wall -Wextra -O2 -I$(GLAD_DIR)/include -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends
+CFLAGS = -Wall -Wextra -O2 -I$(GLAD_DIR)/include
 LDFLAGS = -lGL -lglfw -lm -lfftw3 -lpulse -lpulse-simple -lpthread
 
 VER_MAJOR = 0
@@ -10,12 +10,14 @@ VER_PATCH = 0
 
 SRC_DIR := src
 BUILD_DIR := target
-IMGUI_DIR := $(SRC_DIR)/imgui
+THIRD_PARTY_DIR := third_party
+GLAD_DIR := $(THIRD_PARTY_DIR)/glad
+IMGUI_DIR := $(THIRD_PARTY_DIR)/imgui
 
 TARGET = visualizer-$(VER_MAJOR).$(VER_MINOR).$(VER_PATCH)
 
 SRCS = $(wildcard $(SRC_DIR)/*.cpp)
-GLAD_SRC = $(SRC_DIR)/glad/src/gl.c
+GLAD_SRC = $(GLAD_DIR)/src/gl.c
 IMGUI_SRCS = imgui.cpp imgui_draw.cpp imgui_tables.cpp imgui_widgets.cpp
 IMGUI_BACKEND_SRCS = imgui_impl_glfw.cpp imgui_impl_opengl3.cpp
 
@@ -34,7 +36,7 @@ $(BUILD_DIR):
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp $(SRC_DIR)/config.h | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/glad.o: $(GLAD_SRC) | $(BUILD_DIR)

@@ -2,102 +2,11 @@
 #include <GLFW/glfw3.h>
 #include <glad/gl.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #include "audio.h"
 #include "config.h"
-
-#define SHADER_VERTEX CONFIG_SHADER_PATH CONFIG_SHADER_VERTEX
-#define SHADER_FRAGMENT CONFIG_SHADER_PATH CONFIG_SHADER_FRAGMENT
-
-static char *read_file(const char *path) {
-  FILE *file = fopen(path, "rb");
-  if (!file) {
-    fprintf(stderr, "Failed to open file: %s\n", path);
-    return NULL;
-  }
-
-  fseek(file, 0, SEEK_END);
-  long length = ftell(file);
-  fseek(file, 0, SEEK_SET);
-
-  char *buffer = (char *)malloc(length + 1);
-  if (!buffer) {
-    fclose(file);
-    return NULL;
-  }
-
-  fread(buffer, 1, length, file);
-  buffer[length] = '\0';
-  fclose(file);
-
-  return buffer;
-}
-
-/*
- * Compiles a shader for the GPU
- */
-static GLuint compile_shader(GLenum type, const char *source) {
-  GLuint shader = glCreateShader(type);
-  glShaderSource(shader, 1, &source, NULL);
-  glCompileShader(shader);
-
-  GLint success;
-  glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-  if (!success) {
-    char log[512];
-    glGetShaderInfoLog(shader, sizeof(log), NULL, log);
-    fprintf(stderr, "Shader compilation error: %s\n", log);
-    return 0;
-  }
-
-  return shader;
-}
-
-/*
- * Links our built shaders, creates our shader program, and frees up shader
- * objects
- */
-static GLuint create_shader_program(const char *vert_path,
-                                    const char *frag_path) {
-  char *vert_source = read_file(vert_path);
-  char *frag_source = read_file(frag_path);
-
-  if (!vert_source || !frag_source) {
-    free(vert_source);
-    free(frag_source);
-    return 0;
-  }
-
-  GLuint vert_shader = compile_shader(GL_VERTEX_SHADER, vert_source);
-  GLuint frag_shader = compile_shader(GL_FRAGMENT_SHADER, frag_source);
-
-  free(vert_source);
-  free(frag_source);
-
-  if (!vert_shader || !frag_shader) {
-    return 0;
-  }
-
-  GLuint program = glCreateProgram();
-  glAttachShader(program, vert_shader);
-  glAttachShader(program, frag_shader);
-  glLinkProgram(program);
-
-  GLint success;
-  glGetProgramiv(program, GL_LINK_STATUS, &success);
-  if (!success) {
-    char log[512];
-    glGetProgramInfoLog(program, sizeof(log), NULL, log);
-    fprintf(stderr, "Program linking error: %s\n", log);
-    return 0;
-  }
-
-  glDeleteShader(vert_shader);
-  glDeleteShader(frag_shader);
-
-  return program;
-}
+#include "shader.h"
+#include "ui.h"
 
 /*
  * Resize FBO textures if window dimensions changed
@@ -171,19 +80,14 @@ int main(void) {
   glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *)0);
   glEnableVertexAttribArray(0);
 
-  /* Create our OpenGL program */
+  /* Load shaders */
 
-  GLuint shader_program = create_shader_program(SHADER_VERTEX, SHADER_FRAGMENT);
-  if (!shader_program) {
-    fprintf(stderr, "Failed to create shader program\n");
+  shader_init(CONFIG_SHADER_VERTEX_PATH, CONFIG_SHADER_VERTEX,
+              CONFIG_SHADER_FRAGMENT_PATH);
+  if (shader_get_count() == 0) {
+    fprintf(stderr, "No shaders loaded\n");
     return -1;
   }
-
-  GLint time_loc = glGetUniformLocation(shader_program, "u_time");
-  GLint resolution_loc = glGetUniformLocation(shader_program, "u_resolution");
-  GLint fft_loc = glGetUniformLocation(shader_program, "u_fft");
-  GLint tracer_mult_loc = glGetUniformLocation(shader_program, "u_tracer_mult");
-  GLint prev_frame_loc = glGetUniformLocation(shader_program, "u_prev_frame");
 
   /* Initialize audio capture */
 
@@ -233,6 +137,9 @@ int main(void) {
   /* Unbind FBO, return to default framebuffer (screen) */
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+  /* Initialize ImGui */
+  ui_init(window);
+
   /* Tracer multiplier */
   float tracer_mult = 0.97f;
 
@@ -279,12 +186,13 @@ int main(void) {
     glBindTexture(GL_TEXTURE_2D, fbo_texture[1 - current_fbo]);
 
     /* Assign Uniforms */
-    glUseProgram(shader_program);
-    glUniform1f(time_loc, (float)glfwGetTime());
-    glUniform2f(resolution_loc, (float)width, (float)height);
-    glUniform1f(tracer_mult_loc, (float)tracer_mult);
-    glUniform1i(fft_loc, 0);        // on GL_TEXTURE0 slot
-    glUniform1i(prev_frame_loc, 1); // on GL_TEXTURE1 slot
+    GLuint program = shader_get_current();
+    glUseProgram(program);
+    glUniform1f(glGetUniformLocation(program, "u_time"), (float)glfwGetTime());
+    glUniform2f(glGetUniformLocation(program, "u_resolution"), (float)width, (float)height);
+    glUniform1f(glGetUniformLocation(program, "u_tracer_mult"), (float)tracer_mult);
+    glUniform1i(glGetUniformLocation(program, "u_fft"), 0);        // on GL_TEXTURE0 slot
+    glUniform1i(glGetUniformLocation(program, "u_prev_frame"), 1); // on GL_TEXTURE1 slot
 
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -296,17 +204,21 @@ int main(void) {
 
     current_fbo = 1 - current_fbo;
 
+    /* Render UI overlay */
+    ui_render();
+
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
 
   audio_cleanup();
+  ui_cleanup();
+  shader_cleanup();
 
   glDeleteTextures(1, &fft_texture);
   glDeleteVertexArrays(1, &VAO);
   glDeleteBuffers(1, &VBO);
   glDeleteBuffers(1, &EBO);
-  glDeleteProgram(shader_program);
 
   glfwDestroyWindow(window);
   glfwTerminate();

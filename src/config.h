@@ -8,9 +8,9 @@
 /* Filepaths */
 // TODO: externalize the shader path at build time
 // There's probably a library for this shit or something
-#define CONFIG_SHADER_PATH "src/shaders/"
+#define CONFIG_SHADER_VERTEX_PATH "src/glsl/vertex/"
+#define CONFIG_SHADER_FRAGMENT_PATH "src/glsl/fragment/"
 #define CONFIG_SHADER_VERTEX "vertex.glsl"
-#define CONFIG_SHADER_FRAGMENT "fragment.glsl"
 
 /* Audio Settings */
 #define AUDIO_SAMPLE_RATE 44100
@@ -22,6 +22,8 @@
  * Run 'pactl list sources short' to find available sources.
  * For microphone: use NULL (default input) or a specific mic source
  * For system audio: use a .monitor source like "alsa_output.xxx.monitor" */
-#define AUDIO_PULSE_SOURCE NULL
+#define AUDIO_PULSE_SOURCE                                                     \
+  "alsa_output.pci-0000_04_00.6.HiFi__Speaker__sink.monitor"
+// #define AUDIO_PULSE_SOURCE NULL
 
 #endif
