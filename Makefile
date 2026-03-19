@@ -1,6 +1,6 @@
 CXX = clang++
 CC = clang
-CXXFLAGS = -Wall -Wextra -O2 -I$(GLAD_DIR)/include -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends
+CXXFLAGS = -Wall -Wextra -O2 -I$(GLAD_DIR)/include -I$(THIRD_PARTY_DIR) -I$(IMGUI_DIR)
 CFLAGS = -Wall -Wextra -O2 -I$(GLAD_DIR)/include
 LDFLAGS = -lGL -lglfw -lm -lfftw3 -lpulse -lpulse-simple -lpthread
 
